@@ -6,21 +6,24 @@
  **************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
-#include "teste_imagem.h"
+#include "imagem.h"
 
 int IMAGE_WIDTH  = 512;
 int IMAGE_HEIGHT = 512;
 
 int main (int argc, char *argv[]) {
-	struct Image * image;
-	struct ComprImage * compr_image;
+	struct Image * image1, * image2;
+	struct QuantImage * compr_image;
+	unsigned int fator = 25;
 
 	if (argc == 2) {
-		image = ReadTiffImage(argv[1]);
-		compr_image = aplica_dct(image);
-		image = quantizacao(compr_image, 3);
-		
-		SaveTiffImage("teste.tif", image);
+		image1 = ReadTiffImage(argv[1]);
+		compr_image = comprime(image1, fator);
+		//compr_image = aplica_dct(image);
+		//image = quantizacao(compr_image, 3);
+		printf("\n\n\n");
+		image2 = descomprime(compr_image, fator);
+		SaveTiffImage("anothertest.tif", image2);
 	} else {
 		printf("Usage: primeira filename.tiff\n");
 	}

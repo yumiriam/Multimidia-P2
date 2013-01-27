@@ -48,7 +48,7 @@ void printfm(float **m, int n) {
 	
 	for (i = 0;i < n;i++) {
 		for (j = 0;j < n;j++) {
-			printf("%4d ", (int) m[i][j]);
+			printf("%4d ", round(m[i][j]));
 		}
 		printf("\n");
 	}
@@ -108,7 +108,7 @@ int dct2d(int **x, float **X) {
 
 	X : retorno, x : imagem
 
-***************************************************************************/
+****************************************************************************/
 int idct2d(float **x, int **X) {
 	int   u, v, i, j;
 	float sum_i, sum_j;
@@ -135,7 +135,7 @@ int idct2d(float **x, int **X) {
 struct ComprImage * aplica_dct(struct Image *image) {
 	float **or, **og, **ob;
 	int   **ir, **ig, **ib;
-	int   i, j, x, y;
+	int   i, j, x;
 	struct ComprImage * result;
 
 	or = aloca_f(N, N);
@@ -148,26 +148,65 @@ struct ComprImage * aplica_dct(struct Image *image) {
 	
 	result = (struct ComprImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct ComprImage));
 
-	for (x = 0;x < IMAGE_WIDTH;x+=8) {
-		for (y = 0;y < IMAGE_HEIGHT;y+=8) {
-			for (i = 0;i < N;i++) {
-				for (j = 0;j < N;j++) {
-					ir[i][j] = image[(x+i)*N + (y+j)].red;
-					ig[i][j] = image[(x+i)*N + (y+j)].green;
-					ib[i][j] = image[(x+i)*N + (y+j)].blue;
-				}
+	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				ir[i][j] = image[x + (i*N + j)].red;
+				ig[i][j] = image[x + (i*N + j)].green;
+				ib[i][j] = image[x + (i*N + j)].blue;
 			}
+		}
 
-			dct2d(ir, or);
-			dct2d(ig, og);
-			dct2d(ib, ob);
+		dct2d(ir, or);
+		dct2d(ig, og);
+		dct2d(ib, ob);
+
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				result[x + (i*N + j)].red = or[i][j];
+				result[x + (i*N + j)].green = og[i][j];
+				result[x + (i*N + j)].blue = ob[i][j];
+			}
+		}
+	}
 	
-			for (i = 0;i < N;i++) {
-				for (j = 0;j < N;j++) {
-					result[(x+i)*N + (y+j)].red = or[i][j];
-					result[(x+i)*N + (y+j)].green = og[i][j];
-					result[(x+i)*N + (y+j)].blue = ob[i][j];
-				}
+	return result;
+}
+
+struct Image * aplica_idct(struct ComprImage *image) {
+	float **ir, **ig, **ib;
+	int   **or, **og, **ob;
+	int   i, j, x;
+	struct Image * result;
+
+	ir = aloca_f(N, N);
+	ig = aloca_f(N, N);
+	ib = aloca_f(N, N);
+	
+	or = aloca_i(N, N);
+	og = aloca_i(N, N);
+	ob = aloca_i(N, N);
+	
+	result = (struct Image *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct Image));
+
+	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				ir[i][j] = image[x + (i*N + j)].red;
+				ig[i][j] = image[x + (i*N + j)].green;
+				ib[i][j] = image[x + (i*N + j)].blue;
+			}
+		}
+
+		idct2d(ir, or);
+		idct2d(ig, og);
+		idct2d(ib, ob);
+
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				result[x + (i*N + j)].red = or[i][j];
+				result[x + (i*N + j)].green = og[i][j];
+				result[x + (i*N + j)].blue = ob[i][j];
 			}
 		}
 	}
@@ -191,14 +230,13 @@ int ** quantiza(float **x, int fator) {
 	}
 	
 	return X;
-	
 }
 
 struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
-	float **ir, **ig,  **ib;
+	float **ir, **ig, **ib;
 	int   **or, **og, **ob;
-	int   i, j, x, y;
-	struct Image * result;
+	int   i, j, x;
+	struct QuantImage * result;
 
 
 	ir = aloca_f(N, N);
@@ -207,95 +245,123 @@ struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
 	
 	result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
 
-	for (x = 0;x < IMAGE_WIDTH;x+=8) {
-		for (y = 0;y < IMAGE_HEIGHT;y+=8) {
-			for (i = 0;i < N;i++) {
-				for (j = 0;j < N;j++) {
-					ir[i][j] = image[(x+i)*N + (y+j)].red;
-					ig[i][j] = image[(x+i)*N + (y+j)].green;
-					ib[i][j] = image[(x+i)*N + (y+j)].blue;
-				}
+	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				ir[i][j] = image[x + (i*N + j)].red;
+				ig[i][j] = image[x + (i*N + j)].green;
+				ib[i][j] = image[x + (i*N + j)].blue;
 			}
+		}
 
-			or = quantiza(ir, fator);
-			og = quantiza(ig, fator);
-			ob = quantiza(ib, fator);
-	
-			for (i = 0;i < N;i++) {
-				for (j = 0;j < N;j++) {
-					result[(x+i)*N + (y+j)].red = or[i][j];
-					result[(x+i)*N + (y+j)].green = og[i][j];
-					result[(x+i)*N + (y+j)].blue = ob[i][j];
-				}
+		or = quantiza(ir, fator);
+		og = quantiza(ig, fator);
+		ob = quantiza(ib, fator);
+
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				result[x + (i*N + j)].red = or[i][j];
+				result[x + (i*N + j)].green = og[i][j];
+				result[x + (i*N + j)].blue = ob[i][j];
 			}
 		}
 	}
+	
+	return result;
 }
 
-// Funcao de codificacao entropica retirando os 0s
-struct CodifImage * codifica(struct Image *image) {
-	struct CodifImage r1, r2;
-	int zeros_r, zeros_b, zeros_g;
-	int count_r, count_g, count_b;
+// Efetua dequantizacao
+float ** dequantiza(int **x, int fator) {
+	float **X;
+	int   i, j, q;
+	
+	X = aloca_f(N, N);
+	
+	for (i = 0;i < N;i++) {
+		for (j = 0;j < N;j++) {
+			q = 1 + (1 + i + j)*fator;
+			X[i][j] = q * x[i][j];
+		}
+	}
+	
+	return X;
+}
+
+struct ComprImage * dequantizacao(struct QuantImage *image, int fator) {
+	float **or, **og, **ob;
+	int   **ir, **ig, **ib;
+	int   i, j, x;
+	struct ComprImage * result;
+
+	ir = aloca_i(N, N);
+	ig = aloca_i(N, N);
+	ib = aloca_i(N, N);
+	
+	result = (struct ComprImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct ComprImage));
+	
+
+	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
+			
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				ir[i][j] = image[x + (i*N + j)].red;
+				ig[i][j] = image[x + (i*N + j)].green;
+				ib[i][j] = image[x + (i*N + j)].blue;
+			}
+		}
+		
+		or = dequantiza(ir, fator);
+		og = dequantiza(ig, fator);
+		ob = dequantiza(ib, fator);
+
+		for (i = 0;i < N;i++) {
+			for (j = 0;j < N;j++) {
+				result[x + (i*N + j)].red = or[i][j];
+				result[x + (i*N + j)].green = og[i][j];
+				result[x + (i*N + j)].blue = ob[i][j];
+			}
+		}
+		
+	}
+	
+	return result;
+}
+
+// Compressao JPEG
+struct QuantImage * comprime(struct Image * image, unsigned int fator) {
+	struct ComprImage * compr;
+	struct QuantImage * quant;
 	int x, y;
-	
-	r1.red = (int *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(int));
-	r1.green = (int *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(int));
-	r1.blue = (int *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(int));
-	
-	zeros_r = zeros_b = zeros_g = 0;
-	count_r = count_b = count_g = 0;
-	
+
+
 	for (x = 0;x < IMAGE_WIDTH;x++) {
 		for (y = 0;y < IMAGE_HEIGHT;y++) {
-			if (image[x*IMAGE_WIDTH + y].red == 0) {
-				if (zeros_r < 1)
-					r1.red[count_r++] = image[x*IMAGE_WIDTH + y].red;
-				zeros_r++;
-			} else {
-				if (zeros_r > 0) {
-					r1.red[count_r++] = zeros_r - 1;
-					zeros_r = 0;
-				}
-				r1.red[count_r++] = image[x*IMAGE_WIDTH + y].red;
-			}
-			
-			if (image[x*IMAGE_WIDTH + y].green == 0) {
-				if (zeros_g < 1)
-					r1.green[count_g++] = image[x*IMAGE_WIDTH + y].green;
-				zeros_g++;
-			} else {
-				if (zeros_g > 0) {
-					r1.green[count_g++] = zeros_g - 1;
-					zeros_g = 0;
-				}
-				r1.green[count_g++] = image[x*IMAGE_WIDTH + y].green;
-			}
-			
-			if (image[x*IMAGE_WIDTH + y].blue == 0) {
-				if (zeros_b < 1)
-					r1.blue[count_b++] = image[x*IMAGE_WIDTH + y].blue;
-				zeros_b++;
-			} else {
-				if (zeros_b > 0) {
-					r1.blue[count_b++] = zeros_b - 1;
-					zeros_b = 0;
-				}
-				r1.blue[count_b++] = image[x*IMAGE_WIDTH + y].blue;
-			}
+			printf("%d ", image[x*N + y].red);
 		}
+		printf("\n");
 	}
+	compr = aplica_dct(image);
+	quant = quantizacao(compr, fator);
 	
-	r2.red =  (int *) malloc(count_r*sizeof(int));
-	r2.green =  (int *) malloc(count_g*sizeof(int));
-	r2.blue =  (int *) malloc(count_b*sizeof(int));
-	
-	// memcpy
+	return quant;
 }
 
-// Funcao de decodificacao entropica devolvendo os 0s
-struct Image * decodifica(struct Image *image) {
+// Decompressao JPEG
+struct Image * descomprime(struct QuantImage * quant, unsigned int fator) {
+	struct ComprImage * compr;
+	struct Image * image;
+	int x, y;
 
+	compr = dequantizacao(quant, fator);
+	image = aplica_idct(compr);
+	for (x = 0;x < IMAGE_WIDTH;x++) {
+		for (y = 0;y < IMAGE_HEIGHT;y++) {
+			printf("%d ", image[x*N + y].red);
+		}
+		printf("\n");
+	}
+		
+	return image;
 }
 
 /************************Leitura de imagem TIFF****************************/
@@ -343,11 +409,11 @@ struct Image * ReadTiffImage(char * name) {
 
 	TIFFClose(tif);
 
-	return (struct Image **) t1;
+	return t1;
 }
 
 /************************Salva a imagem TIFF*******************************/
-void SaveTiffImage(char * name, float * t) {  
+void SaveTiffImage(char * name, struct Image * t) {  
 /* 
  * Salva uma matriz com entradas em ponto-flutuante em uma imagem no formato tiff em tons de cinza.
  * Exercício: estenda a função para salvar as três componentes RGB que devem ser armazenadas em uma variável uint32.
@@ -358,47 +424,31 @@ void SaveTiffImage(char * name, float * t) {
 	register int i, j, k;
 	unsigned char * buffer;
 
-	for (i = 0;i < IMAGE_HEIGHT;i++) {
-		for (j = 0;j < IMAGE_WIDTH;j++) {
-			if (t[i*IMAGE_WIDTH+j]<0.0) t[i*IMAGE_WIDTH+j] = 0.0;
-		}
-	}
-	mv = 0.0;
-	for (i = 0;i < IMAGE_HEIGHT;i++) {
-		for (j = 0;j < IMAGE_WIDTH;j++) {
-			if (t[i*IMAGE_WIDTH+j]>mv) mv = t[i*IMAGE_WIDTH+j];
-		}
-	}
-	for (i = 0;i < IMAGE_HEIGHT;i++) {
-		for (j = 0;j < IMAGE_WIDTH;j++) {
-			if (mv != 0.0) t[i*IMAGE_WIDTH+j] = 255.0*(t[i*IMAGE_WIDTH+j]/mv);
-			else t[i*IMAGE_WIDTH+j] = 0.0;
-		}
-	}
 	tif = TIFFOpen(name,"w");
-	buffer = (unsigned char*) malloc(IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(unsigned char));
+	buffer = (unsigned char*) malloc(IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(unsigned char)*3);
 	if (tif) {
 		if (buffer) {
 			k = 0;
 			for (i = 0;i < IMAGE_HEIGHT;i++) {
 				for (j = 0;j < IMAGE_WIDTH;j++) {
-					buffer[k]=(unsigned char)t[i*IMAGE_WIDTH+j];
-					k++;
+					buffer[k++] = (unsigned char) t[i*IMAGE_WIDTH+j].red;
+					buffer[k++] = (unsigned char) t[i*IMAGE_WIDTH+j].green;
+					buffer[k++] = (unsigned char) t[i*IMAGE_WIDTH+j].blue;
 				}
 			}
 			TIFFSetField(tif,TIFFTAG_IMAGEWIDTH,IMAGE_WIDTH);
 			TIFFSetField(tif,TIFFTAG_IMAGELENGTH,IMAGE_HEIGHT);
 			TIFFSetField(tif,TIFFTAG_BITSPERSAMPLE,8);
-			TIFFSetField(tif,TIFFTAG_SAMPLESPERPIXEL,1);
+			TIFFSetField(tif,TIFFTAG_SAMPLESPERPIXEL,3);
 			TIFFSetField(tif,TIFFTAG_ROWSPERSTRIP,IMAGE_HEIGHT);
 			TIFFSetField(tif,TIFFTAG_COMPRESSION,COMPRESSION_NONE);
-			TIFFSetField(tif,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_MINISBLACK);
+			TIFFSetField(tif,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
 			TIFFSetField(tif,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB);
 			TIFFSetField(tif,TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
 			TIFFSetField(tif,TIFFTAG_XRESOLUTION,150.0);
 			TIFFSetField(tif,TIFFTAG_YRESOLUTION,150.0);
 			TIFFSetField(tif,TIFFTAG_RESOLUTIONUNIT,RESUNIT_INCH);
-			TIFFWriteEncodedStrip(tif,0,buffer,IMAGE_HEIGHT*IMAGE_WIDTH);
+			TIFFWriteEncodedStrip(tif,0,buffer,IMAGE_HEIGHT*IMAGE_WIDTH*3);
 		} else { 
 			exit(1); 
 		}

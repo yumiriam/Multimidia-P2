@@ -1,0 +1,45 @@
+
+Observações:
+
+A imagem lena512c.raw assume uma estrutura de dados ilustrada abaixo:
+
+struct Image {
+     unsigned int red, green, blue;
+     };
+
+onde cada cor de um pixel é armazenada em um inteiro sem sinal.
+
+A imagem lena512c.raw pode ser visualizada com o programa "xdisplayraw" (que foi devidamente corrigido para 
+evitar o problema que alguns estavam obtendo de visualizar uma janela branca).
+
+O exercício pedido em sala de aula era para trabalhar considerando a estrutura acima.
+
+Posteriormente, foi pedido que aplicassem o procedimento de compressão sobre o vídeo sample_video.raw.
+Este vídeo não possui nenhuma estrutura de cabeçalho contendo apenas as informações dos pixels para cada frame,
+sendo que cada frame possui 320x240 pixels e 50 frames. Essas informações poderiam ter sido obtidas
+nos códigos passados no moodle.
+
+Nesse vídeo, cada pixel está armazenado em uma estrutura de dados como ilustrada abaixo: 
+
+struct Image {
+     char red, green, blue;
+     };
+
+Notem a diferença com a estrutura da imagem acima. Neste caso, cada cor é armazenada em um char e na imagem, 
+cada cor é armazenada em um int.
+
+Para aqueles que estão tendo problemas nas implentações, estou encaminhando alguns códigos para ajudar:
+
+- convert -> programa para converter a imagem sample_video.raw armazenado seguindo a estrutura acima para uma 
+versão que considera a estrutura de cores armazenadas em inteiros. Notem que a aplicação desse programa 
+multiplica por 4 o tamanho do vídeo (o que pode ser bom para fins do exercício que foi pedido);
+
+- xmovraw -> player para o vídeo considerando a estrutura original de imagem, isso é, char;
+
+- xmovraw2 -> player para o vídeo condiderando a estrutura dos frames como unsigned int; 
+
+Vocês podem converter o vídeo que foi passado em aula (sample_video.raw) utilizando o programa "convert". Depois disso,
+aplicar para cada frame o procedimeno de compressão para imagens.
+
+Cada programa contém no início as informações para compilação e execução.
+
