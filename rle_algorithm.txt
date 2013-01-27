@@ -1,0 +1,41 @@
+Encoder 
+As you've saw the implementation is very easy, you get two bytes, if they are equal output both of them, and then count how many bytes equal to the first you have, then output this value, and continue encoding, of course you have to discard the repeated bytes. Note that the value can't be greater than 255, we are using a byte to represent it. If the bytes were not equal, then output the first, make the second the first, and get the next byte as a second, and start again.
+
+Get two bytes
+Loop
+Are they equal?
+Yes
+Output both of them
+Count how many bytes repeated we have
+Output that value
+Update pointer to the input file
+Get next two bytes.
+Repeat.
+No
+Output the first byte
+ -put the second, as first
+ -get a byte for the second one
+ -update pointer to input file
+ -repeat.
+ 
+Ok? Well, now go and implement it. of course both the encoder and the decoder end when have read all the bytes, I suggest you keeping a variable, or a register with the total length, or something like that. 
+ 
+Decoder 
+The decoder is easier than the encoder, remember: a decoder almost always is easier than an encoder. As before, pseudo code, just rewrite it in your favourite language. 
+ 
+
+Get one byte, put it to the output file, and now it's the 'last' byte.
+Loop
+Get one byte
+Is the current byte equal to last?
+Yes
+Now get another byte, this is 'counter'
+Put current byte in the output file
+Copy 'counter' times the 'last' byte to the output file
+Put last copied byte in 'last' (or leave it alone)
+Repeat.
+No
+Put current byte to the output file
+Now 'last' is the current byte
+Repeat.
+Here it is, if you implement it, you have a Rle with byte based output. 
