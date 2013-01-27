@@ -1,0 +1,113 @@
+Aula 17/12
+
+Problema: considere um vídeo com resolução de 720x576 pixels por "frame" (imagem) e com 16 bits para amostras de cor.
+
+- Sem compressão: total de 1.35MB por frame.
+- Com 25 quadros por segundo, teríamos 33.75MB/s. [Impraticável!]
+
+Duas horas de um vídeo, nesse caso, precisam de 243GB de espaço sem contar o áudio.
+
+# FPS: 24~30, já dão impressão de continuidade
+
+# MPEG: especificação que incorpora o áudio (compressão, MP3)
+
+- O principal algoritmo de compactação de vídeo, hoje em dia, é o MPEG (Moving Picture Experts Group) nas suas versões MPEG1, MPEG2 e MPEG4. Este último, particularmente, é hoje em dia o principal na indústria de entretenimento digital (DVDs, Blu-ray).
+
+# MPEG3 não é o MP3, MP3 é uma camada do MPEG, camada de áudio
+
+  - MPEG1 ~ 1992
+    qualidade VHS
+    resolução 352x288 pixels e áudio em 48KHz
+    taxa de transmissão máxima: 3Mbps (usualmente, 1.5Mbps)
+    ~ 1h de vídeo em um CD comum (VCD)
+    o padrão MP3 é derivado da camada 3
+          
+  - MPEG2 ~ 1996
+	resolução máxima de 1920x1052 pixels (mas usualmente de 720x576 pixels do DVD)
+	áudio de 96KHz suportanto até 8 canais independentes
+    variabilidade na taxa de bits
+    taxa de transmissão de 10Mbps
+    # o algoritmo é essencialmente o mesmo, sem grandes modificações
+
+  - MPEG3
+  	versão descontinuada, desnecessário criar uma nova especificação pois os padrões de TV digital se enquadravam na MPEG1 e MPEG2.
+  	
+  - MPEG4 ~ 1998
+  	implementação direcionada para a Internet e televisão
+  	suporte à renderização 3d
+  	gestão de direitos digitais (DRM - Digital Rights Management)
+  	suporte p/ mídias de alta definição como o Blu-ray e o HD-DVD
+  	taxa e transmissão de 60Mbps
+  	
+# MP4 parte 14 da especificação MPEG4, não é extensão natural do MP3
+
+Aula 07/01
+
+SDL <www.libsdl.org>
+AVI to raw
+Coloca os dados crus, sem informação nenhuma.
+
+Aula 21/01
+
+Realidade Virtual: Aumentada x Diminuída x Misturada
+
+VRML: Bem mais simples que o OpenGL
+
+Sinatxe:
+
+# VRML V2.0 UTF8 // V20 é a versão
+# um arquivo VRML deve ter a extensão wrl
+# exemplos de plugins: Cortona3D e OpenVRML
+# objetos tridimensionais são chamdos SHAPES
+# um SHAPE possui dois atributos: aparência e geometria
+Shape {
+	# define um bloco de objeto 
+	# appearance...# define elementos de aparência como cor por ex.
+	# geometry...# define elementos da geometria do objeto
+}
+
+# VRML V2.0 UTF8
+# desenhando um cubo
+
+Shape {
+	appearance Appearance {
+		material Material {
+			diffuseColor 0.0 0.0 1.0
+		}
+	}
+	geometry Box {
+		size 3.0 3.0 3.0
+	}
+} # fim do shape
+
+Aula 23/01
+
+Realidade Virtual é uma interface avançada para aplicações computacionais que permite ao usuário navegar e interagir, em tempo real, com um ambiente tridimensional gerado por computador, usando dispositivos multisensoriais.
+
+"Posso interagir com o ambiente mas a resposta em tempo real pode ser limitada, de forma que percebo que não estamos em um ambiente real. Interação bidimensional. Estamos querendo sair da tela do computador que é um aparato bidimensional. Tapeia nosso cérebro, nos dando a sensação de 3D na tela, muito embora ainda muitas pessoas se sintam muito incomodadas, sentido efeitos sensoriais desagradáveis (tontura e incômodo nos olhos). Dentro do conceito de AR sempre utilizando dispositivos multi-sensoriais. Não temos tecnologia que esteja apta a nos proporcionar a sensação de que estamos em ambiente real. Este problema não é conceitual, não se trata da formalização matemática, mas apenas de questões tecnológicas. Carecemos de tecnologias para fazer imersão total e real."
+MQD
+
+OpenCV: interatividade e multimídia em TV digital
+
+# VRML V2.0 UTF8
+
+Transform {
+	translation -5 0 0
+	rotation 0 0 1 0.7853
+	scale 1 1 1
+	
+	# as transformações são sempre aplicadas na seguinte ordem: 
+	# rotação, escala translação
+	children [
+		shape {
+			appearance Appearance {
+				material Material {
+					diffuseColor 0.3 1.0 0.0
+				}
+			}  # appearance
+			geometry Box {
+				size 2.5 2.5 5.0
+			}
+		} # shape
+	]  # childrem
+} # transform

@@ -6,6 +6,8 @@
 
 extern int IMAGE_WIDTH, IMAGE_HEIGHT;
 
+/****************************FUNCOES AUXILIARES****************************/
+
 // Funcao auxiliar para criar bloco NxN
 int ** aloca_i(int n, int m) {
 	int **a;
@@ -149,7 +151,8 @@ struct ComprImage * aplica_dct(struct Image *image) {
 	result = (struct ComprImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct ComprImage));
 
 	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
-		for (i = 0;i < N;i++) {
+	
+		for (i = 0;i < N;i++) { // separa blocos NxN (8x8)
 			for (j = 0;j < N;j++) {
 				ir[i][j] = image[x + (i*N + j)].red;
 				ig[i][j] = image[x + (i*N + j)].green;
@@ -157,7 +160,7 @@ struct ComprImage * aplica_dct(struct Image *image) {
 			}
 		}
 
-		dct2d(ir, or);
+		dct2d(ir, or); // aplica a DCT nos blocos NxN (8x8)
 		dct2d(ig, og);
 		dct2d(ib, ob);
 
@@ -168,6 +171,7 @@ struct ComprImage * aplica_dct(struct Image *image) {
 				result[x + (i*N + j)].blue = ob[i][j];
 			}
 		}
+		
 	}
 	
 	return result;
@@ -190,7 +194,8 @@ struct Image * aplica_idct(struct ComprImage *image) {
 	result = (struct Image *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct Image));
 
 	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
-		for (i = 0;i < N;i++) {
+	
+		for (i = 0;i < N;i++) { // separa em blocos NxN (8x8)
 			for (j = 0;j < N;j++) {
 				ir[i][j] = image[x + (i*N + j)].red;
 				ig[i][j] = image[x + (i*N + j)].green;
@@ -198,7 +203,7 @@ struct Image * aplica_idct(struct ComprImage *image) {
 			}
 		}
 
-		idct2d(ir, or);
+		idct2d(ir, or); // aplica a IDCT nos blocos NxN (8x8)
 		idct2d(ig, og);
 		idct2d(ib, ob);
 
@@ -209,6 +214,7 @@ struct Image * aplica_idct(struct ComprImage *image) {
 				result[x + (i*N + j)].blue = ob[i][j];
 			}
 		}
+		
 	}
 	
 	return result;
@@ -238,7 +244,6 @@ struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
 	int   i, j, x;
 	struct QuantImage * result;
 
-
 	ir = aloca_f(N, N);
 	ig = aloca_f(N, N);
 	ib = aloca_f(N, N);
@@ -246,7 +251,8 @@ struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
 	result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
 
 	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
-		for (i = 0;i < N;i++) {
+	
+		for (i = 0;i < N;i++) { // separa em blocos NxN (8x8)
 			for (j = 0;j < N;j++) {
 				ir[i][j] = image[x + (i*N + j)].red;
 				ig[i][j] = image[x + (i*N + j)].green;
@@ -254,7 +260,7 @@ struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
 			}
 		}
 
-		or = quantiza(ir, fator);
+		or = quantiza(ir, fator); // aplica a quantizacao nos blocos NxN (8x8)
 		og = quantiza(ig, fator);
 		ob = quantiza(ib, fator);
 
@@ -265,6 +271,7 @@ struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
 				result[x + (i*N + j)].blue = ob[i][j];
 			}
 		}
+		
 	}
 	
 	return result;
@@ -302,7 +309,7 @@ struct ComprImage * dequantizacao(struct QuantImage *image, int fator) {
 
 	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
 			
-		for (i = 0;i < N;i++) {
+		for (i = 0;i < N;i++) { // separa em blocos NxN (8x8)
 			for (j = 0;j < N;j++) {
 				ir[i][j] = image[x + (i*N + j)].red;
 				ig[i][j] = image[x + (i*N + j)].green;
@@ -310,8 +317,8 @@ struct ComprImage * dequantizacao(struct QuantImage *image, int fator) {
 			}
 		}
 		
-		or = dequantiza(ir, fator);
-		og = dequantiza(ig, fator);
+		or = dequantiza(ir, fator); // aplica a inversa da quantizacao 
+		og = dequantiza(ig, fator); // nos blocos NxN (8x8)
 		ob = dequantiza(ib, fator);
 
 		for (i = 0;i < N;i++) {
@@ -333,13 +340,6 @@ struct QuantImage * comprime(struct Image * image, unsigned int fator) {
 	struct QuantImage * quant;
 	int x, y;
 
-
-	for (x = 0;x < IMAGE_WIDTH;x++) {
-		for (y = 0;y < IMAGE_HEIGHT;y++) {
-			printf("%d ", image[x*N + y].red);
-		}
-		printf("\n");
-	}
 	compr = aplica_dct(image);
 	quant = quantizacao(compr, fator);
 	
@@ -354,12 +354,6 @@ struct Image * descomprime(struct QuantImage * quant, unsigned int fator) {
 
 	compr = dequantizacao(quant, fator);
 	image = aplica_idct(compr);
-	for (x = 0;x < IMAGE_WIDTH;x++) {
-		for (y = 0;y < IMAGE_HEIGHT;y++) {
-			printf("%d ", image[x*N + y].red);
-		}
-		printf("\n");
-	}
 		
 	return image;
 }
