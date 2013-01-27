@@ -31,3 +31,8 @@ Códigos para estudo para a segunda prova da disciplina de Multimídia Computaci
 * *codigos_adicionais*
 
   Pasta com os códigos disponibilizados pelo professor no Moodle.
+  
+* *avi_utils*
+
+  Pasta com os códigos disponibilizados pelo professor no Moodle para manipulação de videos.
+
