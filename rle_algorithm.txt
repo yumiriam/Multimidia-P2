@@ -39,3 +39,5 @@ Put current byte to the output file
 Now 'last' is the current byte
 Repeat.
 Here it is, if you implement it, you have a Rle with byte based output. 
+
+http://www.arturocampos.com/ac_rle.html
