@@ -10,6 +10,7 @@
 
 int IMAGE_WIDTH  = 512;
 int IMAGE_HEIGHT = 512;
+int NFRAMES;
 
 int main (int argc, char *argv[]) {
 	struct Image * image1, * image2;
