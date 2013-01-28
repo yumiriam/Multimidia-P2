@@ -326,16 +326,16 @@ struct ComprImage * dequantizacao(struct QuantImage *image, int fator) {
 	Compactacao entropica sem perda RLE (Run Length Encode)
 ***************************************************************************/
 // Funcao auxiliar do rle
-signed char * rle(int** x, int *tam){
+signed char * rle(int *x, int *tam){
 	signed char blocoAux[N*N*2]; // maximo que o vetor pode ocupar
 	signed char *bloco;
 	int i, count, c, l, dir;
 	
 	l = 0; c = 0; *tam = 0; count = 0; dir = 0;
-	for (i = 0; i < N*N; i++){
+	for (i = 0; i < N*N; i++) {
 		//printf("x[%d][%d] = %d tam = %d count = %d\n", l, c, x[l][c], *tam, count);
 		//fflush(stdout);
-		if (x[l][c] == 0){
+		if (x[l*N + c] == 0){
 				count++;
 		} else {
 			if (count > 0){
@@ -344,7 +344,7 @@ signed char * rle(int** x, int *tam){
 				blocoAux[*tam] = count-1;		
 				*tam = *tam + 1;
 			} 
-			blocoAux[*tam] = x[l][c];
+			blocoAux[*tam] = x[l*N + c];
 			*tam = *tam + 1;
 			count = 0;
 		}
@@ -394,9 +394,7 @@ signed char * rle(int** x, int *tam){
 	bloco = (signed char *) malloc(sizeof(signed char) * (*tam));
 	for (i = 0; i < *tam; i++){
 		bloco[i] = blocoAux[i];
-		printf("%hhd ", bloco[i]);
 	}
-	printf("\n");
 		
 	return bloco;
 }
@@ -471,14 +469,119 @@ int * rle_d(signed char* bloco, int *tam){
 }
 
 // Aplicacao do rle na imagem
-int aplica_rle(struct QuantImage *image, signed char * rle){
-	int tam;
+struct CodifImage aplica_rle(struct QuantImage *image) {
+	int         *i_buffer_r, *i_buffer_g, *i_buffer_b;
+	int         tam, tam_total = 0;
+	signed char *o_buffer_r, *o_buffer_g, *o_buffer_b;
+	int         i, j, count_r, count_g, count_b;
+	signed char *aux_r, *aux_g, *aux_b;
+	struct CodifImage result;
 	
-	return tam;
+	count_r = count_g = count_b = 0;
+
+	i_buffer_r = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_g = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_b = (int *)   malloc(sizeof(int)*N*N);
+	
+	aux_r = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
+	aux_g = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
+	aux_b = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
+
+	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
+	
+		for (j = 0;j < N*N;j++) { // separa em blocos NxN (8x8)
+			i_buffer_r[j] = image[i+j].red;
+			i_buffer_g[j] = image[i+j].green;
+			i_buffer_b[j] = image[i+j].blue;
+		}
+
+		o_buffer_r = rle(i_buffer_r, &tam); // aplica a quantizacao nos blocos NxN (8x8)
+		for (j = 0;j < tam;j++) { // retorna blocos NxN (8x8)
+			aux_r[count_r+j] = o_buffer_r[j];
+			count_r++;
+		}
+			
+		o_buffer_g = rle(i_buffer_g, &tam);
+		for (j = 0;j < tam;j++) { // retorna blocos NxN (8x8)
+			aux_g[count_g+j] = o_buffer_g[j];
+			count_g++;
+		}
+		
+		o_buffer_b = rle(i_buffer_b, &tam);
+		for (j = 0;j < tam;j++) { // retorna blocos NxN (8x8)
+			aux_b[count_b+j] = o_buffer_b[j];
+			count_b++;
+		}
+		
+	}
+	// libera a memoria !importante!
+	free(i_buffer_r);
+	free(i_buffer_g);
+	free(i_buffer_b);
+	free(o_buffer_r);
+	free(o_buffer_g);
+	free(o_buffer_b);
+
+	result.r_size = count_r;
+	result.g_size = count_g;
+	result.b_size = count_b;
+	
+	result.red   = (signed char *) malloc(sizeof(signed char)*count_r);
+	result.green = (signed char *) malloc(sizeof(signed char)*count_g);
+	result.blue  = (signed char *) malloc(sizeof(signed char)*count_b);
+	
+	for (i = 0;i < count_r;i++)
+		result.red[i] = aux_r[i];
+	for (i = 0;i < count_r;i++)
+		result.green[i] = aux_g[i];
+	for (i = 0;i < count_r;i++)
+		result.blue[i] = aux_b[i];
+		
+	free(aux_r);
+	free(aux_g);
+	free(aux_b);
+	
+	return result;
 }
 
 // Aplicacao do rle na imagem (descompactacao)
-void aplica_rle_d(struct QuantImage *image, signed char * rle, int tam){
+struct QuantImage * aplica_rle_d(struct CodifImage image) {
+	int         *i_buffer_r, *i_buffer_g, *i_buffer_b;
+	signed char *o_buffer_r, *o_buffer_g, *o_buffer_b;
+	int         i, j, count_r, count_g, count_b;
+	signed char *aux_r, *aux_g, *aux_b;
+	struct QuantImage * result;
+	
+	count_r = count_g = count_b = 0;
+
+	i_buffer_r = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_g = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_b = (int *)   malloc(sizeof(int)*N*N);
+	
+	aux_r = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
+	aux_g = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
+	aux_b = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
+
+	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
+	
+		//TODO a porra toda
+		
+	}
+	// libera a memoria !importante!
+	free(i_buffer_r);
+	free(i_buffer_g);
+	free(i_buffer_b);
+	free(o_buffer_r);
+	free(o_buffer_g);
+	free(o_buffer_b);
+		
+	free(aux_r);
+	free(aux_g);
+	free(aux_b);
+
+	result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
+	
+	return result;
 }
 
 /***************************Compressao JPEG*********************************
@@ -525,11 +628,6 @@ struct Image * ReadTiffImage(char * name) {
 		TIFFGetField(tif,TIFFTAG_IMAGEWIDTH,&IMAGE_WIDTH);
 		TIFFGetField(tif,TIFFTAG_IMAGELENGTH,&IMAGE_HEIGHT);
 		t2 = (struct Image *) malloc(IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(struct Image));
-		/*
-		t2 = (struct Image **) malloc(IMAGE_WIDTH*sizeof(struct Image *));
-		for (i = 0;i < IMAGE_WIDTH;i++)
-			t2[i] = (struct Image *) malloc(IMAGE_HEIGHT*sizeof(struct Image));
-		*/
 		if (!t2) exit(1);
 		raster = (uint32 *) _TIFFmalloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(uint32));
 		if (raster != NULL) {
