@@ -58,11 +58,11 @@ struct Image * descomprime(struct QuantImage *, unsigned int );
 /*********************************RLE*********************************/
 
 // Funcao auxiliar do rle (compressao)
-signed char* rle(int** , int *);
+signed char * rle(int** , int *);
 // Aplicacao do rle na imagem (compressao)
 int aplica_rle(struct QuantImage * , signed char * );
 // Funcao auxiliar do rle (descompressao)
-int** rle_d(signed char * , int *);
+int * rle_d(signed char * , int *);
 // Aplicacao do rle na imagem (descompressao)
 void aplica_rle_d(struct QuantImage *, signed char * , int );
 

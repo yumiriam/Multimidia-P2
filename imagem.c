@@ -326,7 +326,7 @@ struct ComprImage * dequantizacao(struct QuantImage *image, int fator) {
 	Compactacao entropica sem perda RLE (Run Length Encode)
 ***************************************************************************/
 // Funcao auxiliar do rle
-signed char* rle(int** x, int *tam){
+signed char * rle(int** x, int *tam){
 	signed char blocoAux[N*N*2]; // maximo que o vetor pode ocupar
 	signed char *bloco;
 	int i, count, c, l, dir;
@@ -402,10 +402,10 @@ signed char* rle(int** x, int *tam){
 }
 
 // Funcao auxiliar do rle (descompactacao)
-int** rle_d(signed char* bloco, int *tam){
+int * rle_d(signed char* bloco, int *tam){
 	int i, j, tamAux, l, c, dir;
 	int aux[N*N];
-	int **x;
+	int *x;
 	
 	x = (int *) malloc(sizeof(int)*N*N);
 	
@@ -431,7 +431,7 @@ int** rle_d(signed char* bloco, int *tam){
 
 	l = 0; c = 0; dir = 0;
 	for (i = 0; i < N*N; i++){
-		x[l][c] = aux[i];
+		x[l*N + c] = aux[i];
 		// atualiza os indices (zigue-zague)
 		// dir = 0 subindo a seta
 		if (dir == 0) {
