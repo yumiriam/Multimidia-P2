@@ -117,17 +117,17 @@ int * idct2d(float * x) {
 	return X;
 }
 /************************Aplicacao da DCT na Imagem************************/
-struct ComprImage * aplica_dct(struct Image *image) {
+struct CodifImage * aplica_dct(struct Image *image) {
 	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
 	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
 	int   i, j;
-	struct ComprImage * result;
+	struct CodifImage * result;
 
 	i_buffer_r = (int *)   malloc(sizeof(int)*N*N);
 	i_buffer_g = (int *)   malloc(sizeof(int)*N*N);
 	i_buffer_b = (int *)   malloc(sizeof(int)*N*N);
 	
-	result = (struct ComprImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct ComprImage));
+	result = (struct CodifImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct CodifImage));
 
 	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
 		
@@ -161,7 +161,7 @@ struct ComprImage * aplica_dct(struct Image *image) {
 	return result;
 }
 
-struct Image * aplica_idct(struct ComprImage *image) {
+struct Image * aplica_idct(struct CodifImage *image) {
 	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
 	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
 	int   i, j;
@@ -222,7 +222,7 @@ int * quantiza(float *x, int fator) {
 	return X;
 }
 // Efetua a quantizacao na imagem IMAGE_WIDTHxIMAGE_HEIGHT
-struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
+struct QuantImage * quantizacao(struct CodifImage *image, int fator) {
 	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
 	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
 	int   i, j;
@@ -280,17 +280,17 @@ float * dequantiza(int *x, int fator) {
 	return X;
 }
 // Efetua a dequantizacao na imagem IMAGE_WIDTHxIMAGE_HEIGHT
-struct ComprImage * dequantizacao(struct QuantImage *image, int fator) {
+struct CodifImage * dequantizacao(struct QuantImage *image, int fator) {
 	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
 	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
 	int   i, j;
-	struct ComprImage * result;
+	struct CodifImage * result;
 
 	i_buffer_r = (int *)   malloc(sizeof(int)*N*N);
 	i_buffer_g = (int *)   malloc(sizeof(int)*N*N);
 	i_buffer_b = (int *)   malloc(sizeof(int)*N*N);
 	
-	result = (struct ComprImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct ComprImage));
+	result = (struct CodifImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct CodifImage));
 
 	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
 	
@@ -400,13 +400,13 @@ signed char * rle(int *x, int *tam){
 }
 
 // Aplicacao do rle na imagem
-struct CodifImage aplica_rle(struct QuantImage *image) {
+struct ComprImage aplica_rle(struct QuantImage *image) {
 	int         *i_buffer_r, *i_buffer_g, *i_buffer_b;
 	int         tam, tam_total = 0;
 	signed char *o_buffer_r, *o_buffer_g, *o_buffer_b;
 	int         i, j, count_r, count_g, count_b;
 	signed char *aux_r, *aux_g, *aux_b;
-	struct CodifImage result;
+	struct ComprImage result;
 	
 	count_r = count_g = count_b = 0;
 
@@ -545,7 +545,7 @@ int * rle_d(signed char* bloco, int *tam) {
 }
 
 // Aplicacao do rle na imagem (descompactacao)
-struct QuantImage * aplica_rle_d(struct CodifImage image) {
+struct QuantImage * aplica_rle_d(struct ComprImage image) {
 	int         *i_buffer;
 	int         i, count, tam;
 	struct QuantImage * result;
@@ -595,7 +595,7 @@ struct QuantImage * aplica_rle_d(struct CodifImage image) {
 
 // Compressao JPEG
 struct QuantImage * comprime(struct Image * image, unsigned int fator) {
-	struct ComprImage * compr;
+	struct CodifImage * compr;
 	struct QuantImage * quant;
 	int x, y;
 
@@ -607,7 +607,7 @@ struct QuantImage * comprime(struct Image * image, unsigned int fator) {
 
 // Decompressao JPEG
 struct Image * descomprime(struct QuantImage * quant, unsigned int fator) {
-	struct ComprImage * compr;
+	struct CodifImage * compr;
 	struct Image * image;
 	int x, y;
 

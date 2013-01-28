@@ -12,11 +12,11 @@ struct QuantImage {
 	int red, green, blue;
 };
 
-struct ComprImage {
+struct CodifImage {
 	float red, green, blue;
 };
 
-struct CodifImage {
+struct ComprImage {
 	unsigned int r_size, g_size, b_size;
 	signed char  *red, *green, *blue;
 };
@@ -35,18 +35,18 @@ float * dct2d(int *);
 int   * idct2d(float *);
 
 // Aplicacao da DCT na imagem
-struct ComprImage * aplica_dct(struct Image *);
+struct CodifImage * aplica_dct(struct Image *);
 // Aplicacao da IDCT na imagem
-struct Image * aplica_idct(struct ComprImage *);
+struct Image * aplica_idct(struct CodifImage *);
 
 /*****************************QUANTIZACAO*****************************/
 
 // Efetua quantizacao
 int   * quantiza(float *, int );
-struct QuantImage * quantizacao(struct ComprImage *, int );
+struct QuantImage * quantizacao(struct CodifImage *, int );
 // Efetua dequantizacao
 float * dequantiza(int *, int );
-struct ComprImage * dequantizacao(struct QuantImage *, int );
+struct CodifImage * dequantizacao(struct QuantImage *, int );
 
 /*****************************COMPRESSAO*****************************/
 
@@ -60,11 +60,11 @@ struct Image * descomprime(struct QuantImage *, unsigned int );
 // Funcao auxiliar do rle (compressao)
 signed char * rle(int* , int *);
 // Aplicacao do rle na imagem (compressao)
-struct CodifImage aplica_rle(struct QuantImage *);
+struct ComprImage aplica_rle(struct QuantImage *);
 // Funcao auxiliar do rle (descompressao)
 int * rle_d(signed char * , int *);
 // Aplicacao do rle na imagem (descompressao)
-struct QuantImage * aplica_rle_d(struct CodifImage );
+struct QuantImage * aplica_rle_d(struct ComprImage );
 
 /*******************************IO TIFF******************************/
 
