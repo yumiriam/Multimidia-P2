@@ -1,35 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "tiffio.h"  /* biblioteca libtiff */
+#include <tiffio.h>  /* biblioteca libtiff */
 #include <math.h>
 #include "imagem.h"
 
 extern int IMAGE_WIDTH, IMAGE_HEIGHT;
+extern int NFRAMES;
 
 /****************************FUNCOES AUXILIARES****************************/
-
-// Funcao auxiliar para criar bloco NxN
-int ** aloca_i(int n, int m) {
-	int **a;
-	int i;
-
-	a = (int **) malloc(sizeof(int *) * n);
-	for (i = 0;i < n;i++)
-		a[i] = (int *) malloc(sizeof(int) * m);
-	
-	return a;
-}
-
-float ** aloca_f(int n, int m) {
-	float **a;
-	int   i;
-
-	a = (float **) malloc(sizeof(float *) * n);
-	for (i = 0;i < n;i++)
-		a[i] = (float *) malloc(sizeof(float) * m);
-		
-	return a;
-}
 
 // Imprime matriz inteira nxn
 void printim(int **m, int n) {
@@ -44,7 +22,7 @@ void printim(int **m, int n) {
 	printf("\n");
 }
 
-// Imprime matriz inteira nxn
+// Imprime matriz de ponto flutuante nxn
 void printfm(float **m, int n) {
 	int i, j;
 	
@@ -56,7 +34,7 @@ void printfm(float **m, int n) {
 	}
 	printf("\n");
 }
-/************************Auxiliar DCT**************************************
+/*****************************Auxiliar DCT**********************************
 
 	C(u), C(v) = sqrt(2) / 2 p/ u, v = 0
 				 1 p/ u, v = 1, ..., (m - 1)
@@ -69,7 +47,7 @@ float c(int x) {
 
 	return 0.0;
 }
-/************************Transformada Discreta do Cosseno*******************
+/*******************Transformada Discreta do Cosseno************************
 
 	X[u, v] = (C(u)*C(v) / 4)*...
 		sum( sum(x(i,j)*cos[(2*i + 1)*u*pi / ... 
@@ -79,9 +57,12 @@ float c(int x) {
 	X : retorno, x : imagem
 
 ***************************************************************************/
-int dct2d(int **x, float **X) {
+float * dct2d(int * x) {
 	int   u, v, i, j;
 	float sum_i, sum_j;
+	float * X;
+	
+	X = (float *) malloc(sizeof(float)*N*N);
 	
 	for (u = 0;u < N;u++) {
 		for (v = 0;v < N;v++) {
@@ -90,18 +71,18 @@ int dct2d(int **x, float **X) {
 			for (i = 0;i < N;i++) {
 				sum_j = 0;
 				for (j = 0;j < N;j++) {
-					sum_j = sum_j + x[i][j]*cos((2*i + 1)*u*M_PI / (2*N))*cos((2*j + 1)*v*M_PI / (2*N));	
+					sum_j = sum_j + x[i*N + j]*cos((2*i + 1)*u*M_PI / (2*N))*cos((2*j + 1)*v*M_PI / (2*N));	
 				}
 				sum_i = sum_i + sum_j;
 			}
 			
-			X[u][v] = ((c(u)*c(v)) / 4)*sum_i;
+			X[u*N + v] = ((c(u)*c(v)) / 4)*sum_i;
 		}		
 	}
 
-	return 0;
+	return X;
 }
-/************************Transformada Inversa da Discreta do Cosseno********
+/****************Transformada Inversa da Discreta do Cosseno****************
 
 	X[u, v] = ...
 		sum( sum((C(i)*C(j) / 4)*x(i,j)*cos[(2*u + 1)*i*pi / ... 
@@ -111,10 +92,12 @@ int dct2d(int **x, float **X) {
 	X : retorno, x : imagem
 
 ****************************************************************************/
-int idct2d(float **x, int **X) {
+int * idct2d(float * x) {
 	int   u, v, i, j;
 	float sum_i, sum_j;
+	int   * X;
 	
+	X = (int *) malloc(sizeof(int)*N*N);
 	for (u = 0;u < N;u++) {
 		for (v = 0;v < N;v++) {
 			
@@ -122,217 +105,385 @@ int idct2d(float **x, int **X) {
 			for (i = 0;i < N;i++) {
 				sum_j = 0;
 				for (j = 0;j < N;j++) {
-					sum_j = sum_j + ((c(i)*c(j)) / 4)*x[i][j]*cos((2*u + 1)*i*M_PI / (2*N))*cos((2*v + 1)*j*M_PI / (2*N));	
+					sum_j = sum_j + ((c(i)*c(j)) / 4)*x[i*N + j]*cos((2*u + 1)*i*M_PI / (2*N))*cos((2*v + 1)*j*M_PI / (2*N));	
 				}
 				sum_i = sum_i + sum_j;
 			}
 			
-			X[u][v] = round(sum_i);
+			X[u*N + v] = round(sum_i);
 		}		
 	}
 
-	return 0;
+	return X;
 }
 /************************Aplicacao da DCT na Imagem************************/
 struct ComprImage * aplica_dct(struct Image *image) {
-	float **or, **og, **ob;
-	int   **ir, **ig, **ib;
-	int   i, j, x;
+	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
+	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
+	int   i, j;
 	struct ComprImage * result;
 
-	or = aloca_f(N, N);
-	og = aloca_f(N, N);
-	ob = aloca_f(N, N);
-	
-	ir = aloca_i(N, N);
-	ig = aloca_i(N, N);
-	ib = aloca_i(N, N);
+	i_buffer_r = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_g = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_b = (int *)   malloc(sizeof(int)*N*N);
 	
 	result = (struct ComprImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct ComprImage));
 
-	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
-	
-		for (i = 0;i < N;i++) { // separa blocos NxN (8x8)
-			for (j = 0;j < N;j++) {
-				ir[i][j] = image[x + (i*N + j)].red;
-				ig[i][j] = image[x + (i*N + j)].green;
-				ib[i][j] = image[x + (i*N + j)].blue;
-			}
+	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
+		
+		// separa blocos NxN (8x8)
+		for (j = 0;j < N*N;j++) {
+			i_buffer_r[j] = image[i+j].red;
+			i_buffer_g[j] = image[i+j].green;
+			i_buffer_b[j] = image[i+j].blue;
 		}
 
-		dct2d(ir, or); // aplica a DCT nos blocos NxN (8x8)
-		dct2d(ig, og);
-		dct2d(ib, ob);
+		f_buffer_r = dct2d(i_buffer_r); // aplica a DCT nos blocos NxN (8x8)
+		f_buffer_g = dct2d(i_buffer_g);
+		f_buffer_b = dct2d(i_buffer_b);
 
-		for (i = 0;i < N;i++) {
-			for (j = 0;j < N;j++) {
-				result[x + (i*N + j)].red = or[i][j];
-				result[x + (i*N + j)].green = og[i][j];
-				result[x + (i*N + j)].blue = ob[i][j];
-			}
+		// retorna blocos NxN (8x8)
+		for (j = 0;j < N*N;j++) {
+			result[i+j].red   = f_buffer_r[j];
+			result[i+j].green = f_buffer_g[j];
+			result[i+j].blue  = f_buffer_b[j];
 		}
 		
 	}
+	// libera a memoria !importante!
+	free(f_buffer_r);
+	free(i_buffer_r);
+	free(f_buffer_g);
+	free(i_buffer_g);
+	free(f_buffer_b);
+	free(i_buffer_b);
 	
 	return result;
 }
 
 struct Image * aplica_idct(struct ComprImage *image) {
-	float **ir, **ig, **ib;
-	int   **or, **og, **ob;
-	int   i, j, x;
+	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
+	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
+	int   i, j;
 	struct Image * result;
 
-	ir = aloca_f(N, N);
-	ig = aloca_f(N, N);
-	ib = aloca_f(N, N);
-	
-	or = aloca_i(N, N);
-	og = aloca_i(N, N);
-	ob = aloca_i(N, N);
+	f_buffer_r = (float *) malloc(sizeof(float)*N*N);
+	f_buffer_g = (float *) malloc(sizeof(float)*N*N);
+	f_buffer_b = (float *) malloc(sizeof(float)*N*N);
 	
 	result = (struct Image *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct Image));
 
-	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
-	
-		for (i = 0;i < N;i++) { // separa em blocos NxN (8x8)
-			for (j = 0;j < N;j++) {
-				ir[i][j] = image[x + (i*N + j)].red;
-				ig[i][j] = image[x + (i*N + j)].green;
-				ib[i][j] = image[x + (i*N + j)].blue;
-			}
+	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
+		
+		for (j = 0;j < N*N;j++) { // separa blocos NxN (8x8)
+			f_buffer_r[j] = image[i+j].red;
+			f_buffer_g[j] = image[i+j].green;
+			f_buffer_b[j] = image[i+j].blue;
 		}
 
-		idct2d(ir, or); // aplica a IDCT nos blocos NxN (8x8)
-		idct2d(ig, og);
-		idct2d(ib, ob);
+		i_buffer_r = idct2d(f_buffer_r); // aplica a IDCT nos blocos NxN (8x8)
+		i_buffer_g = idct2d(f_buffer_g);
+		i_buffer_b = idct2d(f_buffer_b);
 
-		for (i = 0;i < N;i++) {
-			for (j = 0;j < N;j++) {
-				result[x + (i*N + j)].red = or[i][j];
-				result[x + (i*N + j)].green = og[i][j];
-				result[x + (i*N + j)].blue = ob[i][j];
-			}
+		for (j = 0;j < N*N;j++) { // retorna blocos NxN (8x8)
+			result[i+j].red   = i_buffer_r[j];
+			result[i+j].green = i_buffer_g[j];
+			result[i+j].blue  = i_buffer_b[j];
 		}
 		
 	}
+	// libera a memoria !importante!
+	free(f_buffer_r);
+	free(i_buffer_r);
+	free(f_buffer_g);
+	free(i_buffer_g);
+	free(f_buffer_b);
+	free(i_buffer_b);
 	
 	return result;
 }
 /************************Efetua a quantizacao******************************
-	Recebe a imagem depois de aplicada a DCT e o fator de qualidade
+	Funcoes para a quantizacao da imagem e reversao deste processo
 ***************************************************************************/
-int ** quantiza(float **x, int fator) {
-	int  **X;
+// Efetua quantizacao no bloco NxN
+int * quantiza(float *x, int fator) {
 	int  i, j, q;
-	
-	X = aloca_i(N, N);
+	int  *X;
+
+	X = (int *) malloc(sizeof(int)*N*N);
 	
 	for (i = 0;i < N;i++) {
 		for (j = 0;j < N;j++) {
 			q = 1 + (1 + i + j)*fator;
-			X[i][j] = round(x[i][j] / q);
+			X[i*N + j] = round(x[i*N + j] / q);
 		}
 	}
 	
 	return X;
 }
-
+// Efetua a quantizacao na imagem IMAGE_WIDTHxIMAGE_HEIGHT
 struct QuantImage * quantizacao(struct ComprImage *image, int fator) {
-	float **ir, **ig, **ib;
-	int   **or, **og, **ob;
-	int   i, j, x;
+	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
+	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
+	int   i, j;
 	struct QuantImage * result;
 
-	ir = aloca_f(N, N);
-	ig = aloca_f(N, N);
-	ib = aloca_f(N, N);
+	f_buffer_r = (float *)   malloc(sizeof(float)*N*N);
+	f_buffer_g = (float *)   malloc(sizeof(float)*N*N);
+	f_buffer_b = (float *)   malloc(sizeof(float)*N*N);
 	
 	result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
 
-	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
+	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
 	
-		for (i = 0;i < N;i++) { // separa em blocos NxN (8x8)
-			for (j = 0;j < N;j++) {
-				ir[i][j] = image[x + (i*N + j)].red;
-				ig[i][j] = image[x + (i*N + j)].green;
-				ib[i][j] = image[x + (i*N + j)].blue;
-			}
+		for (j = 0;j < N*N;j++) { // separa em blocos NxN (8x8)
+			f_buffer_r[j] = image[i+j].red;
+			f_buffer_g[j] = image[i+j].green;
+			f_buffer_b[j] = image[i+j].blue;
 		}
 
-		or = quantiza(ir, fator); // aplica a quantizacao nos blocos NxN (8x8)
-		og = quantiza(ig, fator);
-		ob = quantiza(ib, fator);
+		i_buffer_r = quantiza(f_buffer_r, fator); // aplica a quantizacao nos blocos NxN (8x8)
+		i_buffer_g = quantiza(f_buffer_g, fator);
+		i_buffer_b = quantiza(f_buffer_b, fator);
 
-		for (i = 0;i < N;i++) {
-			for (j = 0;j < N;j++) {
-				result[x + (i*N + j)].red = or[i][j];
-				result[x + (i*N + j)].green = og[i][j];
-				result[x + (i*N + j)].blue = ob[i][j];
-			}
+		for (j = 0;j < N*N;j++) { // retorna blocos NxN (8x8)
+			result[i+j].red   = i_buffer_r[j];
+			result[i+j].green = i_buffer_g[j];
+			result[i+j].blue  = i_buffer_b[j];
 		}
 		
 	}
+	// libera a memoria !importante!
+	free(f_buffer_r);
+	free(i_buffer_r);
+	free(f_buffer_g);
+	free(i_buffer_g);
+	free(f_buffer_b);
+	free(i_buffer_b);
 	
 	return result;
 }
-
-// Efetua dequantizacao
-float ** dequantiza(int **x, int fator) {
-	float **X;
+// Efetua dequantizacao no bloco NxN
+float * dequantiza(int *x, int fator) {
+	float *X;
 	int   i, j, q;
 	
-	X = aloca_f(N, N);
+	X = (float *)   malloc(sizeof(float)*N*N);
 	
 	for (i = 0;i < N;i++) {
 		for (j = 0;j < N;j++) {
 			q = 1 + (1 + i + j)*fator;
-			X[i][j] = q * x[i][j];
+			X[i*N + j] = q * x[i*N + j];
 		}
 	}
 	
 	return X;
 }
-
+// Efetua a dequantizacao na imagem IMAGE_WIDTHxIMAGE_HEIGHT
 struct ComprImage * dequantizacao(struct QuantImage *image, int fator) {
-	float **or, **og, **ob;
-	int   **ir, **ig, **ib;
-	int   i, j, x;
+	float *f_buffer_r, *f_buffer_g, *f_buffer_b;
+	int   *i_buffer_r, *i_buffer_g, *i_buffer_b;
+	int   i, j;
 	struct ComprImage * result;
 
-	ir = aloca_i(N, N);
-	ig = aloca_i(N, N);
-	ib = aloca_i(N, N);
+	i_buffer_r = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_g = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer_b = (int *)   malloc(sizeof(int)*N*N);
 	
 	result = (struct ComprImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct ComprImage));
+
+	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
 	
-
-	for (x = 0;x < IMAGE_WIDTH*IMAGE_HEIGHT;x+=64) {
-			
-		for (i = 0;i < N;i++) { // separa em blocos NxN (8x8)
-			for (j = 0;j < N;j++) {
-				ir[i][j] = image[x + (i*N + j)].red;
-				ig[i][j] = image[x + (i*N + j)].green;
-				ib[i][j] = image[x + (i*N + j)].blue;
-			}
+		for (j = 0;j < N*N;j++) { // separa em blocos NxN (8x8)
+			i_buffer_r[j] = image[i+j].red;
+			i_buffer_g[j] = image[i+j].green;
+			i_buffer_b[j] = image[i+j].blue;
 		}
-		
-		or = dequantiza(ir, fator); // aplica a inversa da quantizacao 
-		og = dequantiza(ig, fator); // nos blocos NxN (8x8)
-		ob = dequantiza(ib, fator);
 
-		for (i = 0;i < N;i++) {
-			for (j = 0;j < N;j++) {
-				result[x + (i*N + j)].red = or[i][j];
-				result[x + (i*N + j)].green = og[i][j];
-				result[x + (i*N + j)].blue = ob[i][j];
-			}
+		f_buffer_r = dequantiza(i_buffer_r, fator); // aplica a quantizacao nos blocos NxN (8x8)
+		f_buffer_g = dequantiza(i_buffer_g, fator);
+		f_buffer_b = dequantiza(i_buffer_b, fator);
+
+		for (j = 0;j < N*N;j++) { // retorna blocos NxN (8x8)
+			result[i+j].red   = f_buffer_r[j];
+			result[i+j].green = f_buffer_g[j];
+			result[i+j].blue  = f_buffer_b[j];
 		}
 		
 	}
+	// libera a memoria !importante!
+	free(f_buffer_r);
+	free(i_buffer_r);
+	free(f_buffer_g);
+	free(i_buffer_g);
+	free(f_buffer_b);
+	free(i_buffer_b);
 	
 	return result;
 }
+
+/***************************Compactacao RLE*********************************
+	Compactacao entropica sem perda RLE (Run Length Encode)
+***************************************************************************/
+// Funcao auxiliar do rle
+signed char* rle(int** x, int *tam){
+	signed char blocoAux[N*N*2]; // maximo que o vetor pode ocupar
+	signed char *bloco;
+	int i, count, c, l, dir;
+	
+	l = 0; c = 0; *tam = 0; count = 0; dir = 0;
+	for (i = 0; i < N*N; i++){
+		//printf("x[%d][%d] = %d tam = %d count = %d\n", l, c, x[l][c], *tam, count);
+		//fflush(stdout);
+		if (x[l][c] == 0){
+				count++;
+		} else {
+			if (count > 0){
+				blocoAux[*tam] = 0;		
+				*tam = *tam + 1;
+				blocoAux[*tam] = count-1;		
+				*tam = *tam + 1;
+			} 
+			blocoAux[*tam] = x[l][c];
+			*tam = *tam + 1;
+			count = 0;
+		}
+		// atualiza os indices (zigue-zague)
+		// dir = 0 subindo a seta
+		if (dir == 0) {
+			if (l-1 < 0){
+				c++;
+				dir = 1;
+			} else {
+				if (c+1 > 7){
+					l++;
+					dir = 1;
+				} else {
+					l--;
+					c++;
+				}
+			}
+		} else { // dir = 1 descendo a seta
+			if (c - 1 < 0){
+				if (l + 1 > 7){
+					c++;
+					dir = 0;
+				} else {
+					l++;
+					dir = 0;
+				}
+			} else {
+				if (l+1 > 7){
+					c++;
+					dir = 0;
+				} else {
+					l++;
+					c--;
+				}
+			}
+		}
+	}
+	if (count > 0) {
+		blocoAux[*tam] = 0;		
+		*tam = *tam + 1;
+		blocoAux[*tam] = count-1;		
+		*tam = *tam + 1;
+		count = 0;
+	}	
+	
+	bloco = (signed char *) malloc(sizeof(signed char) * (*tam));
+	for (i = 0; i < *tam; i++){
+		bloco[i] = blocoAux[i];
+		printf("%hhd ", bloco[i]);
+	}
+	printf("\n");
+		
+	return bloco;
+}
+
+// Funcao auxiliar do rle (descompactacao)
+int** rle_d(signed char* bloco, int *tam){
+	int i, j, tamAux, l, c, dir;
+	int aux[N*N];
+	int **x;
+	
+	x = (int *) malloc(sizeof(int)*N*N);
+	
+	// tira o rle
+	tamAux = 0; i = 0;
+	while (tamAux < 64){
+		if (bloco[i] == 0){
+			aux[tamAux] = 0;
+			tamAux++;
+			i++;
+			for (j = 0; j < bloco[i]; j++){
+				aux[tamAux] = 0;
+				tamAux++;
+			}
+		} else {
+			aux[tamAux] = bloco[i];
+			tamAux++;
+		}
+		i++;
+	}
+
+	*tam = i;
+
+	l = 0; c = 0; dir = 0;
+	for (i = 0; i < N*N; i++){
+		x[l][c] = aux[i];
+		// atualiza os indices (zigue-zague)
+		// dir = 0 subindo a seta
+		if (dir == 0) {
+			if (l-1 < 0){
+				c++;
+				dir = 1;
+			} else {
+				if (c+1 > 7){
+					l++;
+					dir = 1;
+				} else {
+					l--;
+					c++;
+				}
+			}
+		} else { // dir = 1 descendo a seta
+			if (c - 1 < 0){
+				if (l + 1 > 7){
+					c++;
+					dir = 0;
+				} else {
+					l++;
+					dir = 0;
+				}
+			} else {
+				if (l+1 > 7){
+					c++;
+					dir = 0;
+				} else {
+					l++;
+					c--;
+				}
+			}
+		}
+	}
+	return x;
+}
+
+// Aplicacao do rle na imagem
+int aplica_rle(struct QuantImage *image, signed char * rle){
+	int tam;
+	
+	return tam;
+}
+
+// Aplicacao do rle na imagem (descompactacao)
+void aplica_rle_d(struct QuantImage *image, signed char * rle, int tam){
+}
+
+/***************************Compressao JPEG*********************************
+	Recebe a imagem e efetua todos os passos para uma compressao JPEG
+***************************************************************************/
 
 // Compressao JPEG
 struct QuantImage * comprime(struct Image * image, unsigned int fator) {
@@ -358,7 +509,10 @@ struct Image * descomprime(struct QuantImage * quant, unsigned int fator) {
 	return image;
 }
 
-/************************Leitura de imagem TIFF****************************/
+/********************************IO TIFF************************************
+	Funcoes de leitura e escrita
+***************************************************************************/
+// Leitura de imagem TIFF
 struct Image * ReadTiffImage(char * name) {
 	TIFF * tif;
 	uint32 * raster;
@@ -406,13 +560,8 @@ struct Image * ReadTiffImage(char * name) {
 	return t1;
 }
 
-/************************Salva a imagem TIFF*******************************/
+// Escrita da imagem TIFF
 void SaveTiffImage(char * name, struct Image * t) {  
-/* 
- * Salva uma matriz com entradas em ponto-flutuante em uma imagem no formato tiff em tons de cinza.
- * Exercício: estenda a função para salvar as três componentes RGB que devem ser armazenadas em uma variável uint32.
- */
-  
 	TIFF * tif;
 	float mv;
 	register int i, j, k;
@@ -451,4 +600,52 @@ void SaveTiffImage(char * name, struct Image * t) {
 	}
 
 	TIFFClose(tif);
+}
+
+/**********************************VIDEO************************************/
+
+void comprime_video(char * input, char * output) {
+	FILE * fin, * fout;
+	struct Image * frame, * image;
+	int  i, j;
+	char * name;
+  
+	if ( (fin  = fopen(input,"rb")) == NULL ) {
+		printf("Couldn't open input file.");
+		exit(1);
+	}
+	if ( (fout = fopen(output,"wb")) == NULL ) {
+		printf("Couldn't open output file.");
+		exit(1);
+	}
+  
+	frame = (struct Image *) malloc(NFRAMES*IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct Image));
+	if (!frame)	exit(1);
+	image = (struct Image *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct Image));
+	if (!image)	exit(1);
+	
+	while (1) {
+		
+		if (fread(frame, NFRAMES*IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct Image), 1, fin) < 1)
+			break;
+		
+		for (i = 0;i < NFRAMES*IMAGE_WIDTH*IMAGE_HEIGHT;i+=IMAGE_WIDTH*IMAGE_HEIGHT) {
+			for (j = 0;j < IMAGE_WIDTH*IMAGE_HEIGHT;j++) {
+				image[j].red   = frame[i+j].red;
+				image[j].green = frame[i+j].green;
+				image[j].blue  = frame[i+j].blue;
+			}
+			
+			//sprintf(name, "teste_%2d.tif", i/(IMAGE_WIDTH*IMAGE_HEIGHT));
+			//SaveTiffImage(name, image);
+			
+		}
+	
+	}
+	
+	free(frame);
+	free(image);
+
+	fclose(fin);
+	fclose(fout);
 }

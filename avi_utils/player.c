@@ -20,7 +20,7 @@ int main()
   int n;
 
   //hard-code file name and parameters just for demo purposes
-  if ( ( fp = fopen ( "sample_video.raw", "rb" ) ) == NULL ) {
+  if ( ( fp = fopen ( "../videos/sample_video.raw", "rb" ) ) == NULL ) {
     printf("\nError opening file \n");
     exit ( 0 );
   }
