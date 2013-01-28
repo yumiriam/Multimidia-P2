@@ -2,7 +2,7 @@
  * Manipulando Imagens TIFF (Tag Image File Format)
  * autoras: Lissa Pesci
  *          Miriam Yumi Peixoto
- * compile: gcc -o primeira primeira.c imagem.c -lm -ltiff
+ * compile: gcc -o ex_imagem ex_imagem.c imagem.c -lm -ltiff
  **************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>

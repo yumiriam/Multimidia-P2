@@ -16,9 +16,19 @@ Códigos para estudo para a segunda prova da disciplina de Multimídia Computaci
 
   Implementação da biblioteca para a compressão de imagens TIFF.
 
-* *primeira.c*
+* *ex_imagem.c*
 
   Código para realizar testes com a biblioteca de compressão de imagens TIFF (imagem).
+    Compile:
+
+    	gcc -o ex_imagem ex_imagem.c imagem.c -lm -ltiff
+    	
+* *ex_video.c*
+
+  Código para realizar testes de video com a biblioteca de compressão de imagens TIFF (imagem).
+  Compile:
+
+    	gcc -o ex_video ex_video.c imagem.c -lm -ltiff
 
 * *rle_algorithm.txt*
 
@@ -28,11 +38,15 @@ Códigos para estudo para a segunda prova da disciplina de Multimídia Computaci
 
   Código para realizar o teste das funções **dct** e **idct**.
 
+* *avi_utils*
+
+  Pasta com os códigos disponibilizados pelo professor no Moodle para manipulação de videos.
+
 * *codigos_adicionais*
 
   Pasta com os códigos disponibilizados pelo professor no Moodle.
   
-* *avi_utils*
+* *imagens*
 
-  Pasta com os códigos disponibilizados pelo professor no Moodle para manipulação de videos.
+  Pasta com algumas imagens úteis ou para testes.
 
