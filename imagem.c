@@ -399,75 +399,6 @@ signed char * rle(int *x, int *tam){
 	return bloco;
 }
 
-// Funcao auxiliar do rle (descompactacao)
-int * rle_d(signed char* bloco, int *tam){
-	int i, j, tamAux, l, c, dir;
-	int aux[N*N];
-	int *x;
-	
-	x = (int *) malloc(sizeof(int)*N*N);
-	
-	// tira o rle
-	tamAux = 0; i = 0;
-	while (tamAux < 64){
-		if (bloco[i] == 0){
-			aux[tamAux] = 0;
-			tamAux++;
-			i++;
-			for (j = 0; j < bloco[i]; j++){
-				aux[tamAux] = 0;
-				tamAux++;
-			}
-		} else {
-			aux[tamAux] = bloco[i];
-			tamAux++;
-		}
-		i++;
-	}
-
-	*tam = i;
-
-	l = 0; c = 0; dir = 0;
-	for (i = 0; i < N*N; i++){
-		x[l*N + c] = aux[i];
-		// atualiza os indices (zigue-zague)
-		// dir = 0 subindo a seta
-		if (dir == 0) {
-			if (l-1 < 0){
-				c++;
-				dir = 1;
-			} else {
-				if (c+1 > 7){
-					l++;
-					dir = 1;
-				} else {
-					l--;
-					c++;
-				}
-			}
-		} else { // dir = 1 descendo a seta
-			if (c - 1 < 0){
-				if (l + 1 > 7){
-					c++;
-					dir = 0;
-				} else {
-					l++;
-					dir = 0;
-				}
-			} else {
-				if (l+1 > 7){
-					c++;
-					dir = 0;
-				} else {
-					l++;
-					c--;
-				}
-			}
-		}
-	}
-	return x;
-}
-
 // Aplicacao do rle na imagem
 struct CodifImage aplica_rle(struct QuantImage *image) {
 	int         *i_buffer_r, *i_buffer_g, *i_buffer_b;
@@ -544,43 +475,117 @@ struct CodifImage aplica_rle(struct QuantImage *image) {
 	return result;
 }
 
+// Funcao auxiliar do rle (descompactacao)
+int * rle_d(signed char* bloco, int *tam) {
+	int i, j, tamAux, l, c, dir;
+	int aux[N*N];
+	int *x;
+	
+	x = (int *) malloc(sizeof(int)*N*N);
+	
+	// tira o rle
+	tamAux = 0; i = 0;
+	while (tamAux < 64) {
+		if (bloco[i] == 0){
+			aux[tamAux] = 0;
+			tamAux++;
+			i++;
+			for (j = 0; j < bloco[i]; j++){
+				aux[tamAux] = 0;
+				tamAux++;
+			}
+		} else {
+			aux[tamAux] = bloco[i];
+			tamAux++;
+		}
+		i++;
+	}
+
+	*tam = i;
+
+	l = 0; c = 0; dir = 0;
+	for (i = 0; i < N*N; i++) {
+		x[l*N + c] = aux[i];
+		// atualiza os indices (zigue-zague)
+		// dir = 0 subindo a seta
+		if (dir == 0) {
+			if (l-1 < 0){
+				c++;
+				dir = 1;
+			} else {
+				if (c+1 > 7){
+					l++;
+					dir = 1;
+				} else {
+					l--;
+					c++;
+				}
+			}
+		} else { // dir = 1 descendo a seta
+			if (c - 1 < 0){
+				if (l + 1 > 7){
+					c++;
+					dir = 0;
+				} else {
+					l++;
+					dir = 0;
+				}
+			} else {
+				if (l+1 > 7){
+					c++;
+					dir = 0;
+				} else {
+					l++;
+					c--;
+				}
+			}
+		}
+	}
+	return x;
+}
+
 // Aplicacao do rle na imagem (descompactacao)
 struct QuantImage * aplica_rle_d(struct CodifImage image) {
-	int         *i_buffer_r, *i_buffer_g, *i_buffer_b;
-	signed char *o_buffer_r, *o_buffer_g, *o_buffer_b;
-	int         i, j, count_r, count_g, count_b;
-	signed char *aux_r, *aux_g, *aux_b;
+	int         *i_buffer;
+	int         i, count, tam;
 	struct QuantImage * result;
 	
-	count_r = count_g = count_b = 0;
-
-	i_buffer_r = (int *)   malloc(sizeof(int)*N*N);
-	i_buffer_g = (int *)   malloc(sizeof(int)*N*N);
-	i_buffer_b = (int *)   malloc(sizeof(int)*N*N);
+	i_buffer = (int *)   malloc(sizeof(int)*N*N);
 	
-	aux_r = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
-	aux_g = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
-	aux_b = (signed char *)   malloc(sizeof(signed char)*IMAGE_WIDTH*IMAGE_HEIGHT*2);
+	result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
 
-	for (i = 0;i < IMAGE_WIDTH*IMAGE_HEIGHT;i+=64) {
-	
-		//TODO a porra toda
+	count = 0;
+	while (count < image.r_size) {
+		i_buffer = rle_d(&(image.red[count]), &tam);
 		
+		for (i = count;i < N*N;i++) {
+			result[i].red = i_buffer[i];
+		}
+		count += tam;
+	}
+	
+	count = 0;
+	while (count < image.g_size) {
+		i_buffer = rle_d((&image.green[count]), &tam);
+		
+		for (i = count;i < N*N;i++) {
+			result[i].green = i_buffer[i];
+		}
+		count += tam;
+	}
+	
+	count = 0;
+	while (count < image.b_size) {
+		i_buffer = rle_d((&image.blue[count]), &tam);
+		
+		for (i = count;i < N*N;i++) {
+			result[i].blue = i_buffer[i];
+		}
+		count += tam;
 	}
 	// libera a memoria !importante!
-	free(i_buffer_r);
-	free(i_buffer_g);
-	free(i_buffer_b);
-	free(o_buffer_r);
-	free(o_buffer_g);
-	free(o_buffer_b);
-		
-	free(aux_r);
-	free(aux_g);
-	free(aux_b);
+	free(i_buffer);
 
-	result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
-	
 	return result;
 }
 
