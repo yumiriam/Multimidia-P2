@@ -51,9 +51,9 @@ struct CodifImage * dequantizacao(struct QuantImage *, int );
 /*****************************COMPRESSAO*****************************/
 
 // Compressao JPEG
-struct QuantImage * comprime(struct Image *, unsigned int );
+struct ComprImage comprime(struct Image *, unsigned int );
 // Decompressao JPEG
-struct Image * descomprime(struct QuantImage *, unsigned int );
+struct Image * descomprime(struct ComprImage, unsigned int );
 
 /*********************************RLE*********************************/
 

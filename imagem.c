@@ -551,15 +551,14 @@ struct QuantImage * aplica_rle_d(struct ComprImage image) {
 	struct QuantImage * result;
 	
 	i_buffer = (int *)   malloc(sizeof(int)*N*N);
+	//result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
 	
-	result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
-
 	count = 0;
 	while (count < image.r_size) {
 		i_buffer = rle_d(&(image.red[count]), &tam);
 		
-		for (i = count;i < N*N;i++) {
-			result[i].red = i_buffer[i];
+		for (i = count;i < count+(N*N);i++) {
+			result[i].red = i_buffer[i-count];
 		}
 		count += tam;
 	}
@@ -568,8 +567,8 @@ struct QuantImage * aplica_rle_d(struct ComprImage image) {
 	while (count < image.g_size) {
 		i_buffer = rle_d((&image.green[count]), &tam);
 		
-		for (i = count;i < N*N;i++) {
-			result[i].green = i_buffer[i];
+		for (i = count;i < count+(N*N);i++) {
+			result[i].green = i_buffer[i-count];
 		}
 		count += tam;
 	}
@@ -578,8 +577,8 @@ struct QuantImage * aplica_rle_d(struct ComprImage image) {
 	while (count < image.b_size) {
 		i_buffer = rle_d((&image.blue[count]), &tam);
 		
-		for (i = count;i < N*N;i++) {
-			result[i].blue = i_buffer[i];
+		for (i = count;i < count+(N*N);i++) {
+			result[i].blue = i_buffer[i-count];
 		}
 		count += tam;
 	}
@@ -594,25 +593,29 @@ struct QuantImage * aplica_rle_d(struct ComprImage image) {
 ***************************************************************************/
 
 // Compressao JPEG
-struct QuantImage * comprime(struct Image * image, unsigned int fator) {
-	struct CodifImage * compr;
+struct ComprImage comprime(struct Image * image, unsigned int fator) {
+	struct CodifImage * codif;
 	struct QuantImage * quant;
+	struct ComprImage compr; 
 	int x, y;
 
-	compr = aplica_dct(image);
-	quant = quantizacao(compr, fator);
+	codif = aplica_dct(image);
+	quant = quantizacao(codif, fator);
+	compr = aplica_rle(quant);
 	
-	return quant;
+	return compr;
 }
 
 // Decompressao JPEG
-struct Image * descomprime(struct QuantImage * quant, unsigned int fator) {
-	struct CodifImage * compr;
+struct Image * descomprime(struct ComprImage compr, unsigned int fator) {
+	struct QuantImage * quant;
+	struct CodifImage * codif;
 	struct Image * image;
 	int x, y;
 
-	compr = dequantizacao(quant, fator);
-	image = aplica_idct(compr);
+	quant = aplica_rle_d(compr);
+	codif = dequantizacao(quant, fator);
+	image = aplica_idct(codif);
 		
 	return image;
 }

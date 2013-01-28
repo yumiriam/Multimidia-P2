@@ -14,7 +14,7 @@ int NFRAMES;
 
 int main (int argc, char *argv[]) {
 	struct Image * image1, * image2;
-	struct QuantImage * compr_image;
+	struct ComprImage compr_image;
 	unsigned int fator = 5;
 
 	if (argc == 2) {
@@ -22,10 +22,11 @@ int main (int argc, char *argv[]) {
 		compr_image = comprime(image1, fator);
 		//compr_image = aplica_dct(image);
 		//image = quantizacao(compr_image, 3);
+		
 		image2 = descomprime(compr_image, fator);
 		SaveTiffImage("imagens/anothertest.tif", image2);
 	} else {
-		printf("Usage: primeira filename.tiff\n");
+		printf("Usage: ex_imagem filename.tiff\n");
 	}
 	
 	return 0;
