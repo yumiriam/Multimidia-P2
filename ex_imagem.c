@@ -22,7 +22,6 @@ int main (int argc, char *argv[]) {
 		compr_image = comprime(image1, fator);
 		//compr_image = aplica_dct(image);
 		//image = quantizacao(compr_image, 3);
-		
 		image2 = descomprime(compr_image, fator);
 		SaveTiffImage("imagens/anothertest.tif", image2);
 	} else {

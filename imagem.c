@@ -551,7 +551,7 @@ struct QuantImage * aplica_rle_d(struct ComprImage image) {
 	struct QuantImage * result;
 	
 	i_buffer = (int *)   malloc(sizeof(int)*N*N);
-	//result = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
+	result   = (struct QuantImage *) malloc(IMAGE_WIDTH*IMAGE_HEIGHT*sizeof(struct QuantImage));
 	
 	count = 0;
 	while (count < image.r_size) {
@@ -602,6 +602,8 @@ struct ComprImage comprime(struct Image * image, unsigned int fator) {
 	codif = aplica_dct(image);
 	quant = quantizacao(codif, fator);
 	compr = aplica_rle(quant);
+
+	free(codif);
 	
 	return compr;
 }
@@ -613,9 +615,12 @@ struct Image * descomprime(struct ComprImage compr, unsigned int fator) {
 	struct Image * image;
 	int x, y;
 
+	printf("AQUI::");
 	quant = aplica_rle_d(compr);
 	codif = dequantizacao(quant, fator);
 	image = aplica_idct(codif);
+	
+	free(codif);
 		
 	return image;
 }
